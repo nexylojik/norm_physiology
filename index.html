@@ -1,0 +1,821 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Тренажёр — нормальная физиология</title>
+<style>
+  @font-face{ font-family:'Libre Caslon Cond'; src:url('fonts/LibreCaslonCyrCondensed-Regular.otf') format('opentype'); font-weight:400; font-style:normal; font-display:swap; }
+  @font-face{ font-family:'Inter Tight'; src:url('fonts/InterTight-Medium.ttf') format('truetype'); font-weight:500; font-style:normal; font-display:swap; }
+  @font-face{ font-family:'Inter Tight'; src:url('fonts/InterTight-SemiBold.ttf') format('truetype'); font-weight:600; font-style:normal; font-display:swap; }
+  @font-face{ font-family:'Atkinson Mono'; src:url('fonts/AtkinsonHyperlegibleMono-Medium.ttf') format('truetype'); font-weight:500; font-style:normal; font-display:swap; }
+
+  :root{
+    color-scheme: dark;
+    --bg:#100E14; --surface:#1A1822; --surface-2:#211E2A; --border:#332F3D;
+    --text:#ECF4FF; --text-muted:rgba(236,244,255,.58);
+    --accent:#FF9FA2; --accent-soft:rgba(255,159,162,.14);
+    --accent-2:#E7B588; --accent-2-soft:rgba(231,181,136,.14);
+    --ok:#8FD6A6; --ok-soft:rgba(143,214,166,.13);
+    --bad:#FF7F86; --bad-soft:rgba(255,127,134,.13);
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 14px 34px -14px rgba(0,0,0,.65);
+  }
+
+  *{box-sizing:border-box;}
+  html{background:var(--bg);}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:'Inter Tight', 'Segoe UI', Arial, sans-serif; font-weight:500;
+    margin:0; padding:0 16px 72px; line-height:1.6;
+  }
+  .wrap{max-width:840px; margin:0 auto;}
+  h1,h2,h3{font-family:'Libre Caslon Cond', Georgia, serif; font-weight:400; letter-spacing:.01em; text-wrap:balance; margin:0 0 .3em;}
+  [hidden]{display:none !important;}
+
+  header.top{position:sticky; top:0; z-index:10; background:var(--bg); padding:18px 0 14px; border-bottom:1px solid var(--border);}
+  .title-row{display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;}
+  h1{font-size:1.7rem; margin:0;}
+  @media (max-width:600px){ header.top{padding:12px 0 10px;} h1{font-size:1.3rem;} }
+  .h-side{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+  .xlink{font-size:.82rem; font-weight:600; color:var(--accent); text-decoration:none; border:1px solid var(--border); border-radius:999px; padding:4px 12px; white-space:nowrap; transition:border-color .15s ease, background .15s ease;}
+  .xlink:hover{border-color:var(--accent); background:var(--accent-soft);}
+  .xlink:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  @media (max-width:600px){ .h-side{width:100%; justify-content:space-between;} .xlink{padding:3px 10px; font-size:.78rem;} }
+  .h-meta{font-family:'Atkinson Mono', monospace; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-muted);}
+  main{padding-top:22px;}
+  .intro{color:var(--text-muted); margin:0 0 18px; font-size:.95rem;}
+
+  /* ---- кнопки ---- */
+  .btn{
+    font:inherit; font-family:'Inter Tight', sans-serif; font-weight:600; font-size:.95rem;
+    border:1px solid var(--border); background:var(--surface-2); color:var(--text);
+    border-radius:10px; padding:10px 16px; cursor:pointer; transition:background .15s ease, border-color .15s ease;
+  }
+  .btn:hover{border-color:rgba(236,244,255,.3);}
+  .btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .btn.primary{background:var(--accent); color:#1A1216; border-color:var(--accent);}
+  .btn.primary:hover{background:#ffb3b5;}
+  .btn.ghost{background:transparent;}
+  .btn:disabled{opacity:.45; cursor:not-allowed;}
+
+  /* ---- главная ---- */
+  .modes{display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; margin-bottom:28px;}
+  .exam-card{grid-column:1 / -1; cursor:default;}
+  .exam-card:hover{transform:none;}
+  .exam-controls{display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin-top:10px;}
+  .seg{display:inline-flex; gap:2px; padding:3px; background:var(--surface-2); border:1px solid var(--border); border-radius:10px;}
+  .seg button{font:inherit; font-weight:600; font-size:.85rem; padding:7px 12px; border:none; border-radius:7px; background:transparent; color:var(--text-muted); cursor:pointer;}
+  .seg button[aria-checked="true"]{background:var(--surface); color:var(--accent); box-shadow:var(--shadow);}
+  .seg button:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+  .range{display:inline-flex; gap:10px; align-items:center; font-size:.9rem; color:var(--text-muted);}
+  .range select{font:inherit; font-family:'Atkinson Mono', monospace; color:var(--text); background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:6px 8px; margin-left:4px;}
+  .range select:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  #examStart{margin-left:auto;}
+  @media (max-width:640px){ .exam-controls{flex-direction:column; align-items:stretch;} .seg button{flex:1;} .range{justify-content:space-between;} #examStart{margin-left:0;} }
+  @media (max-width:640px){ .modes{grid-template-columns:1fr;} }
+  .mode{
+    text-align:left; font:inherit; color:var(--text); cursor:pointer;
+    background:var(--surface); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow);
+    padding:16px 18px; display:flex; flex-direction:column; gap:4px; transition:transform .2s ease, border-color .2s ease;
+  }
+  .mode:hover{transform:translateY(-1px); border-color:rgba(236,244,255,.25);}
+  .mode:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .mode.hero{background:radial-gradient(120% 140% at 0% 0%, rgba(255,159,162,.18), transparent 60%), var(--surface);}
+  .mode-title{font-family:'Libre Caslon Cond', serif; font-size:1.3rem; line-height:1.2;}
+  .mode-sub{color:var(--text-muted); font-size:.88rem;}
+  .mode-tag{font-family:'Atkinson Mono', monospace; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; color:var(--accent);}
+  .mode:disabled{opacity:.45; cursor:not-allowed; transform:none;}
+
+  .qgroup{margin-bottom:26px;}
+  .qgroup > h2{font-size:1.3rem; border-bottom:1px solid var(--border); padding-bottom:8px; display:flex; justify-content:space-between; align-items:baseline; gap:10px;}
+  .qgroup > h2 .h-meta{font-family:'Atkinson Mono', monospace;}
+  .sections{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px;}
+  .sec{
+    font:inherit; text-align:left; cursor:pointer; color:var(--text);
+    background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:10px 12px;
+    display:flex; flex-direction:column; gap:2px; transition:border-color .15s ease;
+  }
+  .sec:hover{border-color:var(--accent);}
+  .sec:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .sec-num{font-weight:600;}
+  .sec-meta{font-family:'Atkinson Mono', monospace; font-size:.7rem; color:var(--text-muted); letter-spacing:.03em;}
+  .sec-meta .best{color:var(--ok);}
+  .sec-meta .best.mid{color:var(--accent-2);}
+  .sec-meta .best.low{color:var(--bad);}
+  .sec-meta .new{color:var(--accent);}
+  .sec-num{display:flex; justify-content:space-between; align-items:baseline; gap:6px;}
+  .sec-num .perfect{font-family:'Atkinson Mono', monospace; font-size:.72rem; font-weight:500; color:var(--ok); background:var(--ok-soft); border-radius:999px; padding:1px 7px; white-space:nowrap;}
+  .perfect-line{margin-top:8px; font-size:.9rem; color:var(--ok);}
+
+  /* ---- тест ---- */
+  .quiz-bar{display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap;}
+  .quiz-title{font-family:'Libre Caslon Cond', serif; font-size:1.35rem; flex:1; min-width:160px;}
+  .progress{display:flex; align-items:center; gap:10px; margin-bottom:18px;}
+  .progress-track{flex:1; height:6px; border-radius:999px; background:var(--surface-2); overflow:hidden;}
+  .progress-fill{height:100%; width:0; background:var(--accent); border-radius:999px; transition:width .25s ease;}
+  .progress-text{font-family:'Atkinson Mono', monospace; font-size:.8rem; color:var(--text-muted); min-width:4.5em; text-align:right;}
+  .score-live{font-family:'Atkinson Mono', monospace; font-size:.8rem; color:var(--ok);}
+
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:20px 22px;}
+  @media (max-width:600px){ .card{padding:16px;} }
+  .q-meta{font-family:'Atkinson Mono', monospace; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; color:var(--accent); margin-bottom:8px;}
+  .q-text{font-size:1.08rem; font-weight:600; line-height:1.5; margin-bottom:6px;}
+  .q-hint{font-size:.82rem; color:var(--text-muted); margin-bottom:14px;}
+  .scheme{margin:10px 0 12px; border:1px solid var(--border); border-radius:10px; overflow:hidden; font-size:.85rem;}
+  .scheme table{width:100%; border-collapse:collapse;}
+  .scheme th, .scheme td{padding:5px 10px; text-align:center; border-bottom:1px solid var(--border);}
+  .scheme tr:last-child td{border-bottom:none;}
+  .scheme th{font-family:'Atkinson Mono', monospace; font-size:.68rem; text-transform:uppercase; letter-spacing:.04em; color:var(--text-muted); font-weight:500; background:var(--surface-2);}
+  .scheme td:first-child{font-weight:600; color:var(--accent-2);}
+  .statement{background:var(--surface-2); border-left:3px solid var(--accent-2); border-radius:0 8px 8px 0; padding:10px 12px; margin:6px 0 14px; font-weight:600;}
+  .statement .because{color:var(--accent-2); font-family:'Atkinson Mono', monospace; font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; padding:0 .3em;}
+
+  .answers{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px;}
+  .ans{
+    width:100%; font:inherit; text-align:left; color:var(--text); cursor:pointer;
+    background:var(--surface-2); border:1px solid var(--border); border-radius:10px;
+    padding:11px 14px; display:flex; gap:12px; align-items:flex-start; transition:border-color .15s ease, background .15s ease;
+  }
+  .ans:hover:not(:disabled){border-color:rgba(236,244,255,.3);}
+  .ans:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .ans .box{
+    flex:none; width:22px; height:22px; border-radius:6px; border:1.5px solid rgba(236,244,255,.35);
+    display:flex; align-items:center; justify-content:center; font-family:'Atkinson Mono', monospace; font-size:.75rem; color:var(--text-muted); margin-top:1px;
+  }
+  .ans[aria-pressed="true"]{border-color:var(--accent); background:var(--accent-soft);}
+  .ans[aria-pressed="true"] .box{background:var(--accent); border-color:var(--accent); color:#1A1216;}
+  .ans:disabled{cursor:default;}
+  .ans.correct{border-color:var(--ok); background:var(--ok-soft);}
+  .ans.correct .box{background:var(--ok); border-color:var(--ok); color:#10231A;}
+  .ans.wrong{border-color:var(--bad); background:var(--bad-soft);}
+  .ans.wrong .box{background:var(--bad); border-color:var(--bad); color:#2A0F12;}
+  .ans.missed{border-style:dashed; border-color:var(--ok);}
+
+  .feedback{margin-top:14px; font-weight:600; min-height:1.5em;}
+  .feedback.ok{color:var(--ok);}
+  .feedback.bad{color:var(--bad);}
+  .note{margin-top:10px; font-size:.88rem; line-height:1.5; color:var(--accent-2); background:var(--accent-2-soft); border-left:3px solid var(--accent-2); border-radius:0 8px 8px 0; padding:8px 12px;}
+  .note b{font-weight:600;}
+  .actions{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; align-items:center;}
+  .kbd-hint{font-size:.75rem; color:var(--text-muted); margin-left:auto;}
+  @media (max-width:600px){ .kbd-hint{display:none;} }
+
+  /* ---- результат ---- */
+  .result-score{font-family:'Libre Caslon Cond', serif; font-size:3rem; line-height:1; margin:6px 0;}
+  .grade{font-family:'Atkinson Mono', monospace; font-size:.8rem; text-transform:uppercase; letter-spacing:.06em;}
+  .grade.g5{color:var(--ok);} .grade.g4{color:var(--accent-2);} .grade.g3{color:var(--accent);} .grade.g2{color:var(--bad);}
+  .mistakes{margin-top:22px;}
+  .mistake{border-top:1px dashed var(--border); padding:12px 0;}
+  .mistake-q{font-weight:600; margin-bottom:4px;}
+  .mistake-a{font-size:.9rem; color:var(--text-muted);}
+  .mistake-a b{color:var(--ok); font-weight:600;}
+
+  /* ---- все вопросы ---- */
+  .search{width:100%; font:inherit; color:var(--text); background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 14px; margin-bottom:10px;}
+  .quiz-sticky{position:sticky; top:var(--hdr, 70px); z-index:9; background:var(--bg); padding-top:10px; margin-top:-10px;}
+  .quiz-sticky .progress{margin-bottom:0; padding-bottom:12px;}
+  #screen-quiz .card{margin-top:6px;}
+  .study-hint{font-size:.9rem; color:var(--text-muted); background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:10px 14px; margin-bottom:18px;}
+  .study-start{position:sticky; bottom:0; padding:14px 0 18px; background:linear-gradient(transparent, var(--bg) 35%); display:flex; justify-content:center;}
+  .study-start .btn{padding:12px 22px; font-size:1rem; box-shadow:var(--shadow);}
+  @media (max-width:600px){
+    .study-start .btn{width:100%;}
+    #screen-quiz .quiz-bar{gap:8px; margin-bottom:10px;}
+    #screen-quiz .quiz-title{font-size:1.15rem; min-width:0; flex-basis:100%;}
+    #peekBtn, #restartBtn, #finishBtn{flex:1; padding:8px 6px; font-size:.82rem;}
+    .wide-only{display:none;}
+  }
+  .tools-row{display:flex; gap:8px; align-items:stretch; margin-bottom:10px;}
+  .tools-row .search{margin-bottom:0; flex:1; min-width:0;}
+  .back-btn{flex:none; padding:0 14px; font-size:.88rem; white-space:nowrap;}
+  .list-tools{position:sticky; top:var(--hdr, 70px); z-index:9; background:var(--bg); padding:10px 0 8px; margin:-10px 0 14px; border-bottom:1px solid var(--border);}
+  .sec-nav{display:flex; gap:6px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; padding:2px 0;}
+  .sec-nav::-webkit-scrollbar{display:none;}
+  @media (min-width:700px){ .sec-nav{flex-wrap:wrap; overflow:visible;} }
+  .sec-chip{
+    flex:none; min-width:38px; height:36px; padding:0 8px; border-radius:9px; cursor:pointer;
+    font:inherit; font-family:'Atkinson Mono', monospace; font-size:.85rem; color:var(--text-muted);
+    background:var(--surface); border:1px solid var(--border); transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .sec-chip:hover:not(:disabled){border-color:var(--accent); color:var(--text);}
+  .sec-chip:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+  .sec-chip.active{background:var(--accent); border-color:var(--accent); color:#1A1216;}
+  .sec-chip:disabled{opacity:.3; cursor:default;}
+  #list .qgroup{scroll-margin-top:var(--stick, 180px);}
+  .to-top{
+    position:fixed; right:16px; bottom:20px; z-index:20; width:44px; height:44px; border-radius:50%;
+    border:1px solid var(--border); background:var(--surface-2); color:var(--text); font-size:1.1rem; cursor:pointer;
+    box-shadow:var(--shadow); opacity:0; transform:translateY(8px); pointer-events:none; transition:opacity .2s ease, transform .2s ease;
+  }
+  .to-top.show{opacity:1; transform:none; pointer-events:auto;}
+  .to-top:hover{border-color:var(--accent);}
+  .search:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  .list-q{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 16px; margin-bottom:8px;}
+  .list-q .q-meta{margin-bottom:4px;}
+  .list-q .q-text, .mistake .q-text{font-size:1rem; margin-bottom:0;}
+  .list-q .scheme, .mistake .scheme{max-width:420px;}
+  .list-q ol{margin:6px 0 0; padding-left:1.4em; font-size:.92rem; color:var(--text-muted);}
+  .list-q li.right{color:var(--ok); font-weight:600;}
+  .list-q li::marker{font-family:'Atkinson Mono', monospace;}
+  .empty{color:var(--text-muted); text-align:center; padding:30px 0;}
+
+  /* ---- физиология: дополнения ---- */
+  .topics{display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:10px;}
+  .tile{
+    font:inherit; text-align:left; cursor:pointer; color:var(--text);
+    background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 14px;
+    display:flex; flex-direction:column; gap:3px; transition:border-color .15s ease, transform .15s ease;
+  }
+  .tile:hover{border-color:var(--accent); transform:translateY(-1px);}
+  .tile:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .tile-title{font-weight:600; line-height:1.35; display:flex; justify-content:space-between; gap:8px; align-items:baseline;}
+  .tile-meta{font-family:'Atkinson Mono', monospace; font-size:.7rem; color:var(--text-muted); letter-spacing:.03em;}
+  .tile-meta .best{color:var(--ok);} .tile-meta .best.mid{color:var(--accent-2);} .tile-meta .best.low{color:var(--bad);}
+  .tile-meta .new{color:var(--accent);}
+  .tile .perfect{flex:none; font-family:'Atkinson Mono', monospace; font-size:.72rem; font-weight:500; color:var(--ok); background:var(--ok-soft); border-radius:999px; padding:1px 7px; white-space:nowrap;}
+  .upd{color:var(--accent-2); font-size:.75rem; font-family:'Atkinson Mono', monospace; margin-left:4px;}
+  .tile-bar{height:4px; border-radius:999px; background:var(--surface-2); overflow:hidden; margin-top:6px;}
+  .tile-bar i{display:block; height:100%; background:var(--ok); border-radius:999px;}
+
+  .crumbs{display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap;}
+  .crumbs .quiz-title{flex:1;}
+
+  .launch-card{background:var(--surface); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:18px 20px; margin-bottom:18px;
+    background:radial-gradient(120% 140% at 0% 0%, rgba(255,159,162,.14), transparent 60%), var(--surface);}
+  .launch-title{font-family:'Libre Caslon Cond', serif; font-size:1.45rem; line-height:1.2; margin-bottom:4px;}
+  .launch-meta{font-family:'Atkinson Mono', monospace; font-size:.72rem; letter-spacing:.05em; text-transform:uppercase; color:var(--text-muted); margin-bottom:14px;}
+  .launch-sub{color:var(--text-muted); font-size:.9rem; margin:10px 0 0;}
+  .launch-controls{display:flex; flex-wrap:wrap; gap:10px; align-items:center;}
+  .launch-actions{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;}
+  .launch-actions .primary{margin-left:auto;}
+  .seg{flex-wrap:wrap;}
+  .range{display:inline-flex; gap:10px; align-items:center; font-size:.9rem; color:var(--text-muted); flex-wrap:wrap;}
+  .range input, .range select{font:inherit; font-family:'Atkinson Mono', monospace; color:var(--text); background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:6px 8px; width:5.2em; margin-left:4px;}
+  .range select{width:auto;}
+  .range input:focus, .range select:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  @media (max-width:640px){
+    .launch-controls{flex-direction:column; align-items:stretch;}
+    .seg{display:flex;} .seg button{flex:1;}
+    .launch-actions{flex-direction:column-reverse;} .launch-actions .btn{width:100%;} .launch-actions .primary{margin-left:0;}
+  }
+
+  .q-img{margin:4px 0 14px; text-align:center;}
+  .q-img img{max-width:100%; max-height:340px; border-radius:10px; background:#fff; cursor:zoom-in; display:inline-block;}
+  .list-q .q-img img{max-height:220px;}
+  #list .list-q, #list .qgroup{scroll-margin-top:var(--stick, 200px);}
+  .list-q.flash{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft);}
+  .lightbox{position:fixed; inset:0; z-index:100; background:rgba(8,7,11,.94); display:flex; align-items:center; justify-content:center; padding:20px; cursor:zoom-out;}
+  .lightbox img{max-width:100%; max-height:100%; border-radius:8px; background:#fff;}
+  .ans .radio{border-radius:50%;}
+  .study-hint{font-size:.9rem; color:var(--text-muted); background:var(--accent-soft); border-left:3px solid var(--accent); border-radius:0 10px 10px 0; padding:10px 14px; margin-bottom:18px;}
+  .study-start{position:sticky; bottom:0; padding:14px 0 18px; background:linear-gradient(transparent, var(--bg) 35%); display:flex; justify-content:center;}
+  .study-start .btn{padding:12px 22px; font-size:1rem; box-shadow:var(--shadow);}
+  .topic-nav, .test-nav{flex-wrap:nowrap !important; overflow-x:auto !important;}
+  .topic-nav{margin-top:8px;}
+  .test-nav{margin-top:6px;}
+  .sec-chip.wide{min-width:auto; padding:0 12px; font-family:'Inter Tight', sans-serif; font-size:.8rem; font-weight:600;}
+  .list-count{font-size:.85rem; color:var(--text-muted); margin:0 0 12px;}
+  @media (max-width:600px){ .study-start .btn{width:100%;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="title-row">
+      <h1>Тренажёр: нормальная физиология</h1>
+      <div class="h-side"><span class="h-meta" id="totalMeta"></span></div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ============ ГЛАВНАЯ ============ -->
+    <section id="screen-home">
+      <p class="intro">Тесты кафедры нормальной физиологии по темам. Выбери тему → тест → режим: все вопросы по порядку, диапазон или случайные. Первый запуск теста начинается с изучения вопросов.</p>
+      <div class="modes">
+        <button class="mode" id="modeMistakes">
+          <span class="mode-tag">Повторение</span>
+          <span class="mode-title">Работа над ошибками</span>
+          <span class="mode-sub" id="modeMistakesSub"></span>
+        </button>
+        <button class="mode" id="modeRandom">
+          <span class="mode-tag">Смешанный</span>
+          <span class="mode-title">30 случайных</span>
+          <span class="mode-sub">Из всех тем сразу</span>
+        </button>
+      </div>
+      <div class="qgroup">
+        <h2>Темы <button class="btn ghost" id="openList" style="font-size:.85rem; padding:6px 12px;">Все вопросы с ответами</button></h2>
+        <div class="topics" id="topics"></div>
+      </div>
+    </section>
+
+    <!-- ============ ТЕМА ============ -->
+    <section id="screen-topic" hidden>
+      <div class="crumbs">
+        <div class="quiz-title" id="topicTitle"></div>
+        <button class="btn ghost" id="topicBack">← Темы</button>
+      </div>
+      <div class="topics" id="tests"></div>
+    </section>
+
+    <!-- ============ ЗАПУСК ТЕСТА ============ -->
+    <section id="screen-launch" hidden>
+      <div class="crumbs">
+        <div class="quiz-title" id="launchCrumb"></div>
+        <button class="btn ghost" id="launchBack">← Назад</button>
+      </div>
+      <div class="launch-card">
+        <div class="launch-title" id="launchTitle"></div>
+        <div class="launch-meta" id="launchMeta"></div>
+        <div class="launch-controls">
+          <div class="seg" role="radiogroup" aria-label="Режим" id="launchSeg"></div>
+          <div class="range" id="rangeBox" hidden>
+            <label>с <input type="number" id="rFrom" min="1" inputmode="numeric"></label>
+            <label>по <input type="number" id="rTo" min="1" inputmode="numeric"></label>
+          </div>
+          <div class="range" id="randBox" hidden>
+            <label>вопросов <select id="rCount"><option>10</option><option>20</option><option>30</option><option>50</option><option>100</option></select></label>
+          </div>
+        </div>
+        <p class="launch-sub" id="launchSub"></p>
+        <div class="launch-actions">
+          <button class="btn" id="launchStudy">Изучить вопросы</button>
+          <button class="btn primary" id="launchStart">Начать →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ИЗУЧЕНИЕ ============ -->
+    <section id="screen-study" hidden>
+      <div class="crumbs">
+        <div class="quiz-title" id="studyTitle"></div>
+        <button class="btn ghost" id="studyBack">← Назад</button>
+      </div>
+      <div class="study-hint" id="studyHint"></div>
+      <div id="studyList"></div>
+      <div class="study-start"><button class="btn primary" id="studyStart">Я изучил — начать тест →</button></div>
+    </section>
+
+    <!-- ============ ТЕСТ ============ -->
+    <section id="screen-quiz" hidden>
+      <div class="quiz-sticky">
+        <div class="quiz-bar">
+          <div class="quiz-title" id="quizTitle"></div>
+          <button class="btn ghost" id="peekBtn" title="Список вопросов этого теста с ответами">Вопросы<span class="wide-only"> теста</span></button>
+          <button class="btn ghost" id="restartBtn" title="Начать этот тест заново">↻ Заново</button>
+          <button class="btn ghost" id="finishBtn">Завершить</button>
+        </div>
+        <div class="progress">
+          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+          <span class="score-live" id="scoreLive"></span>
+          <span class="progress-text" id="progressText"></span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="q-meta" id="qMeta"></div>
+        <div id="qBody"></div>
+        <ul class="answers" id="answers"></ul>
+        <div class="feedback" id="feedback" aria-live="polite"></div>
+        <div class="actions">
+          <button class="btn primary" id="checkBtn">Проверить</button>
+          <button class="btn primary" id="nextBtn" hidden>Дальше →</button>
+          <span class="kbd-hint">1–8 — выбрать · Enter — проверить / дальше</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ РЕЗУЛЬТАТ ============ -->
+    <section id="screen-result" hidden>
+      <div class="card">
+        <div class="q-meta" id="resultTitle">Результат</div>
+        <div class="result-score" id="resultScore"></div>
+        <div class="grade" id="resultGrade"></div>
+        <div class="perfect-line" id="perfectLine" hidden></div>
+        <div class="actions">
+          <button class="btn primary" id="nextTest" hidden>Следующий тест →</button>
+          <button class="btn primary" id="retryMistakes">Повторить ошибки</button>
+          <button class="btn" id="retrySame">Решить заново</button>
+          <button class="btn" id="newSet" hidden>Новый набор</button>
+          <button class="btn ghost" id="toMenu">В меню</button>
+        </div>
+        <div class="mistakes" id="mistakes"></div>
+      </div>
+    </section>
+
+    <!-- ============ СПИСОК ============ -->
+    <section id="screen-list" hidden>
+      <div class="quiz-bar"><div class="quiz-title" id="listTitle">Все вопросы с ответами</div></div>
+      <div class="list-tools" id="listTools">
+        <div class="tools-row">
+          <button class="btn ghost back-btn" id="listBack">← Меню</button>
+          <input class="search" id="search" type="search" placeholder="Поиск по всем темам">
+        </div>
+        <nav class="sec-nav topic-nav" id="topicNav" aria-label="Темы"></nav>
+        <nav class="sec-nav test-nav" id="testNav" aria-label="Тесты темы"></nav>
+      </div>
+      <p class="list-count" id="listCount"></p>
+      <div id="list"></div>
+      <button class="to-top" id="toTop" aria-label="Наверх" title="Наверх">↑</button>
+    </section>
+  </main>
+</div>
+
+<div class="lightbox" id="lightbox" hidden><img id="lightboxImg" alt=""></div>
+
+<script src="data.js"></script>
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var TOPICS = window.PHYS.topics;
+  var P = 'physio-';
+  var LS = {mistakes: P + 'mistakes', best: P + 'best', perfect: P + 'perfect', studied: P + 'studied', launch: P + 'launch'};
+
+  // ---------- Данные ----------
+  var TESTS = [], BY_ID = {}, ALL = [];
+  TOPICS.forEach(function(tp, ti){
+    tp.idx = ti;
+    tp.tests.forEach(function(t, gi){
+      t.key = ti + '.' + gi; t.topic = tp; t.gi = gi;
+      t.q.forEach(function(q, qi){ q.id = t.key + '.' + qi; q.n = qi + 1; q.test = t; BY_ID[q.id] = q; ALL.push(q); });
+      TESTS.push(t);
+    });
+  });
+
+  function load(k, d){ try{ var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; }catch(e){ return d; } }
+  function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  var mistakes = load(LS.mistakes, []).filter(function(id){ return BY_ID[id]; });
+  var best = load(LS.best, {}), perfect = load(LS.perfect, {}), studied = load(LS.studied, {}), launchCfg = load(LS.launch, {});
+
+  function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function shuffle(a){ for(var i = a.length - 1; i > 0; i--){ var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function sample(a, n){ return shuffle(a.slice()).slice(0, n); }
+  function plural(n, one, few, many){ var m10 = n % 10, m100 = n % 100; if(m10 === 1 && m100 !== 11) return one; if(m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few; return many; }
+  function grade(p){ return p >= 90 ? 5 : p >= 80 ? 4 : p >= 60 ? 3 : 2; }
+  var GRADE_TEXT = {5:'Оценка 5 — отлично', 4:'Оценка 4 — хорошо', 3:'Оценка 3 — удовлетворительно', 2:'Оценка 2 — надо повторить'};
+  var LETTERS = ['1','2','3','4','5','6','7','8','9'];
+
+  var SCREENS = ['home','topic','launch','study','quiz','result','list'];
+  function show(name){
+    SCREENS.forEach(function(n){ $('screen-' + n).hidden = (n !== name); });
+    document.documentElement.style.setProperty('--hdr', document.querySelector('header.top').offsetHeight + 'px');
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- Главная ----------
+  function bestHtml(v){ return v == null ? '' : ' · <span class="best' + (v >= 80 ? '' : v >= 60 ? ' mid' : ' low') + '">' + v + '%</span>'; }
+  function renderHome(){
+    $('totalMeta').textContent = ALL.length + ' вопросов · ' + TOPICS.length + ' тем';
+    $('modeMistakesSub').textContent = mistakes.length ? ('Вопросов с ошибками: ' + mistakes.length) : 'Ошибок пока нет — сначала пройди тест';
+    $('modeMistakes').disabled = !mistakes.length;
+    var box = $('topics'); box.innerHTML = '';
+    TOPICS.forEach(function(tp){
+      var n = tp.tests.reduce(function(s, t){ return s + t.q.length; }, 0);
+      var done = tp.tests.filter(function(t){ return perfect[t.key]; }).length;
+      var b = document.createElement('button'); b.className = 'tile';
+      var single = tp.tests.length === 1;
+      var meta = single ? (n + ' вопр.' + bestHtml(best[tp.tests[0].key]) + (studied[tp.tests[0].key] ? '' : ' · <span class="new">не изучен</span>'))
+                        : (tp.tests.length + ' ' + plural(tp.tests.length, 'тест', 'теста', 'тестов') + ' · ' + n + ' вопр.');
+      var pf = single ? (perfect[tp.tests[0].key] || 0) : 0;
+      b.innerHTML = '<span class="tile-title"><span>' + esc(tp.title) + (tp.upd ? '<span class="upd">★ обновлено</span>' : '') + '</span>' +
+        (pf ? '<span class="perfect" title="Решено на 100%">✓ ' + pf + '</span>' : '') + '</span>' +
+        '<span class="tile-meta">' + meta + '</span>' +
+        (!single ? '<span class="tile-bar" title="Тестов решено на 100%: ' + done + ' из ' + tp.tests.length + '"><i style="width:' + (done / tp.tests.length * 100) + '%"></i></span>' : '');
+      b.addEventListener('click', function(){ if(single) openLaunch(tp.tests[0]); else openTopic(tp); });
+      box.appendChild(b);
+    });
+    show('home');
+  }
+
+  // ---------- Тема ----------
+  var curTopic = null;
+  function openTopic(tp){
+    curTopic = tp;
+    $('topicTitle').textContent = tp.title;
+    var box = $('tests'); box.innerHTML = '';
+    tp.tests.forEach(function(t){
+      var b = document.createElement('button'); b.className = 'tile';
+      var pf = perfect[t.key] || 0;
+      b.innerHTML = '<span class="tile-title"><span>' + esc(t.title) + (t.upd ? '<span class="upd">★</span>' : '') + '</span>' +
+        (pf ? '<span class="perfect" title="Решено на 100%">✓ ' + pf + '</span>' : '') + '</span>' +
+        '<span class="tile-meta">' + t.q.length + ' вопр.' + bestHtml(best[t.key]) + (studied[t.key] ? '' : ' · <span class="new">не изучен</span>') + '</span>';
+      b.addEventListener('click', function(){ openLaunch(t); });
+      box.appendChild(b);
+    });
+    show('topic');
+  }
+
+  // ---------- Запуск теста ----------
+  var curTest = null, launchMode = 'all';
+  function modesFor(t){
+    var m = [{id:'all', label:'Все ' + t.q.length}, {id:'range', label:'Диапазон'}, {id:'rand', label:'Случайные'}];
+    if(t.parts) m.push({id:'parts', label:t.parts.length + ' по билетам'});
+    return m;
+  }
+  function openLaunch(t){
+    curTest = t;
+    var cfg = launchCfg[t.key] || {};
+    launchMode = cfg.mode || 'all';
+    $('launchCrumb').textContent = t.topic.tests.length > 1 ? t.topic.title : 'Тест';
+    $('launchTitle').textContent = t.title;
+    var pf = perfect[t.key] || 0;
+    $('launchMeta').innerHTML = t.q.length + ' вопросов' + (best[t.key] != null ? ' · лучший результат ' + best[t.key] + '%' : '') + (pf ? ' · ✓ на 100%: ' + pf : '') + (studied[t.key] ? '' : ' · не изучен');
+    var seg = $('launchSeg'); seg.innerHTML = '';
+    modesFor(t).forEach(function(m){
+      var b = document.createElement('button'); b.type = 'button'; b.setAttribute('role', 'radio'); b.dataset.mode = m.id; b.textContent = m.label;
+      b.addEventListener('click', function(){ launchMode = m.id; syncLaunch(); });
+      seg.appendChild(b);
+    });
+    if(!modesFor(t).some(function(m){ return m.id === launchMode; })) launchMode = 'all';
+    $('rFrom').max = $('rTo').max = t.q.length;
+    $('rFrom').value = cfg.from || 1; $('rTo').value = cfg.to || Math.min(t.q.length, 25);
+    $('rCount').value = String(cfg.count || 30);
+    syncLaunch();
+    show('launch');
+  }
+  function clampRange(changed){
+    var n = curTest.q.length;
+    var f = Math.max(1, Math.min(n, parseInt($('rFrom').value, 10) || 1));
+    var to = Math.max(1, Math.min(n, parseInt($('rTo').value, 10) || n));
+    if(f > to){ if(changed === 'from') to = f; else f = to; }
+    $('rFrom').value = f; $('rTo').value = to;
+    return [f, to];
+  }
+  function syncLaunch(changed){
+    var t = curTest;
+    $('launchSeg').querySelectorAll('button').forEach(function(b){ b.setAttribute('aria-checked', String(b.dataset.mode === launchMode)); });
+    $('rangeBox').hidden = launchMode !== 'range';
+    $('randBox').hidden = launchMode !== 'rand';
+    var sub = '';
+    if(launchMode === 'all') sub = 'Все ' + t.q.length + ' вопросов по порядку.';
+    if(launchMode === 'range'){ var r = clampRange(changed); var k = r[1] - r[0] + 1; sub = k + ' ' + plural(k, 'вопрос', 'вопроса', 'вопросов') + ' по порядку: с ' + r[0] + ' по ' + r[1] + '.'; }
+    if(launchMode === 'rand'){ var c = Math.min(+$('rCount').value, t.q.length); sub = c + ' случайных ' + plural(c, 'вопрос', 'вопроса', 'вопросов') + ' из ' + t.q.length + '.'; }
+    if(launchMode === 'parts') sub = t.parts.length + ' вопросов — по одному случайному из каждого билета (как на зачёте).';
+    $('launchSub').textContent = sub;
+    var cfg = {mode: launchMode, from: +$('rFrom').value, to: +$('rTo').value, count: +$('rCount').value};
+    launchCfg[t.key] = cfg; save(LS.launch, launchCfg);
+  }
+  $('rFrom').addEventListener('change', function(){ syncLaunch('from'); });
+  $('rTo').addEventListener('change', function(){ syncLaunch('to'); });
+  $('rCount').addEventListener('change', function(){ syncLaunch(); });
+
+  function buildList(t, mode){
+    if(mode === 'range'){ var r = clampRange(); return t.q.slice(r[0] - 1, r[1]); }
+    if(mode === 'rand') return sample(t.q, Math.min(+$('rCount').value, t.q.length));
+    if(mode === 'parts') return t.parts.map(function(p){ return t.q[p[0] + Math.floor(Math.random() * (p[1] - p[0]))]; });
+    return t.q.slice();
+  }
+  function runTitle(t, mode, list){
+    if(mode === 'range') return t.title + ' · ' + list[0].n + '–' + list[list.length - 1].n;
+    if(mode === 'rand') return t.title + ' · ' + list.length + ' случайных';
+    if(mode === 'parts') return t.title + ' · по билетам';
+    return t.title;
+  }
+  function launch(t, mode, list){
+    list = list || buildList(t, mode);
+    var opts = {test: t, mode: mode};
+    if(!studied[t.key]) openStudy(t, list, opts);
+    else start(runTitle(t, mode, list), list, opts);
+  }
+  $('launchStart').addEventListener('click', function(){ launch(curTest, launchMode); });
+  $('launchStudy').addEventListener('click', function(){ openStudy(curTest, buildList(curTest, launchMode === 'rand' || launchMode === 'parts' ? 'all' : launchMode), null); });
+  $('launchBack').addEventListener('click', function(){ if(curTest.topic.tests.length > 1) openTopic(curTest.topic); else renderHome(); });
+  $('topicBack').addEventListener('click', renderHome);
+
+  // ---------- Изучение ----------
+  var study = null;
+  function openStudy(t, list, opts){
+    study = {t: t, list: list, opts: opts};
+    $('studyTitle').textContent = t.title + ' · изучение';
+    $('studyHint').textContent = opts
+      ? 'Первый запуск этого теста: сначала прочитай вопросы с правильными ответами, потом переходи к тесту. В следующий раз тест откроется сразу.'
+      : 'Вопросы с правильными ответами (' + list.length + ').';
+    $('studyStart').textContent = opts ? 'Я изучил — начать тест →' : 'К запуску теста →';
+    $('studyList').innerHTML = list.map(listItemHtml).join('');
+    show('study');
+  }
+  $('studyStart').addEventListener('click', function(){
+    if(!study.opts){ openLaunch(study.t); return; }
+    studied[study.t.key] = true; save(LS.studied, studied);
+    start(runTitle(study.t, study.opts.mode, study.list), study.list, study.opts);
+  });
+  $('studyBack').addEventListener('click', function(){ openLaunch(study.t); });
+
+  // ---------- Тест ----------
+  var S = null;
+  function start(title, list, opts){
+    S = {title: title, list: list, i: 0, score: 0, answered: 0, wrong: [], opts: opts || {}, selected: [], checked: false};
+    $('quizTitle').textContent = title;
+    show('quiz');
+    renderQ();
+  }
+  function imgHtml(q){ return q.img ? '<div class="q-img"><img src="' + q.img + '" alt="Иллюстрация к вопросу" loading="lazy"></div>' : ''; }
+  function renderQ(){
+    var q = S.list[S.i];
+    S.selected = []; S.checked = false;
+    $('qMeta').textContent = 'Вопрос ' + (S.i + 1) + ' из ' + S.list.length + ' · ' + q.test.title + ', № ' + q.n;
+    $('qBody').innerHTML = '<div class="q-text">' + esc(q.t).replace(/\n/g, '<br>') + '</div>' + imgHtml(q) +
+      '<div class="q-hint">' + (q.m ? 'Несколько правильных ответов — отметь все' : 'Один правильный ответ') + '</div>';
+    var ul = $('answers'); ul.innerHTML = '';
+    q.o.forEach(function(a, k){
+      var li = document.createElement('li');
+      var b = document.createElement('button'); b.className = 'ans'; b.type = 'button'; b.setAttribute('aria-pressed', 'false');
+      b.innerHTML = '<span class="box' + (q.m ? '' : ' radio') + '">' + LETTERS[k] + '</span><span>' + esc(a) + '</span>';
+      b.addEventListener('click', function(){ toggle(k); });
+      li.appendChild(b); ul.appendChild(li);
+    });
+    $('feedback').textContent = ''; $('feedback').className = 'feedback';
+    $('checkBtn').hidden = false; $('checkBtn').disabled = true; $('nextBtn').hidden = true;
+    updateProgress();
+  }
+  function toggle(k){
+    if(S.checked) return;
+    var q = S.list[S.i]; if(k >= q.o.length) return;
+    if(q.m){ var p = S.selected.indexOf(k); if(p >= 0) S.selected.splice(p, 1); else S.selected.push(k); }
+    else S.selected = S.selected[0] === k ? [] : [k];
+    $('answers').querySelectorAll('.ans').forEach(function(b, i){ b.setAttribute('aria-pressed', String(S.selected.indexOf(i) >= 0)); });
+    $('checkBtn').disabled = !S.selected.length;
+  }
+  function check(){
+    if(S.checked || !S.selected.length) return;
+    S.checked = true;
+    var q = S.list[S.i], c = q.c;
+    var ok = S.selected.length === c.length && c.every(function(x){ return S.selected.indexOf(x) >= 0; });
+    $('answers').querySelectorAll('.ans').forEach(function(b, k){
+      b.disabled = true;
+      var isC = c.indexOf(k) >= 0, isS = S.selected.indexOf(k) >= 0;
+      if(isC) b.classList.add('correct'); if(isC && !isS) b.classList.add('missed'); if(isS && !isC) b.classList.add('wrong');
+    });
+    S.answered++;
+    if(ok){
+      S.score++; $('feedback').textContent = 'Верно'; $('feedback').className = 'feedback ok';
+      var mi = mistakes.indexOf(q.id); if(mi >= 0 && S.opts.mistakes){ mistakes.splice(mi, 1); save(LS.mistakes, mistakes); }
+    } else {
+      S.wrong.push(q);
+      $('feedback').textContent = 'Неверно. Правильный ответ: ' + c.map(function(x){ return x + 1; }).join(', ');
+      $('feedback').className = 'feedback bad';
+      if(mistakes.indexOf(q.id) < 0){ mistakes.push(q.id); save(LS.mistakes, mistakes); }
+    }
+    $('checkBtn').hidden = true; $('nextBtn').hidden = false;
+    $('nextBtn').textContent = S.i === S.list.length - 1 ? 'Результат →' : 'Дальше →';
+    $('nextBtn').focus({preventScroll: true});
+    updateProgress();
+  }
+  function next(){ if(S.i < S.list.length - 1){ S.i++; renderQ(); window.scrollTo(0, 0); } else finish(true); }
+  function updateProgress(){
+    $('progressFill').style.width = (S.answered / S.list.length * 100) + '%';
+    $('progressText').textContent = S.answered + ' / ' + S.list.length;
+    $('scoreLive').textContent = S.answered ? ('✓ ' + S.score) : '';
+  }
+  function nextTestOf(t){ var ts = t.topic.tests; return ts[t.gi + 1] || null; }
+  function finish(complete){
+    var total = S.answered, p = total ? Math.round(S.score / total * 100) : 0;
+    var t = S.opts.test, full = complete && total === S.list.length && t && S.opts.mode === 'all';
+    if(full){ best[t.key] = Math.max(best[t.key] || 0, p); save(LS.best, best); }
+    var isPerfect = full && S.score === total;
+    if(isPerfect){ perfect[t.key] = (perfect[t.key] || 0) + 1; save(LS.perfect, perfect); }
+    $('perfectLine').hidden = !isPerfect;
+    if(isPerfect) $('perfectLine').textContent = '✓ Тест решён без ошибок — всего ' + perfect[t.key] + ' ' + plural(perfect[t.key], 'раз', 'раза', 'раз');
+    var nt = t && S.opts.mode === 'all' ? nextTestOf(t) : null;
+    $('nextTest').hidden = !nt;
+    if(nt) $('nextTest').textContent = 'Следующий тест: ' + nt.title + ' →';
+    $('newSet').hidden = !(S.opts.mode === 'rand' || S.opts.mode === 'parts' || S.opts.random);
+    $('retryMistakes').hidden = !S.wrong.length;
+    $('retryMistakes').classList.toggle('primary', !nt);
+    $('resultTitle').textContent = (complete ? 'Результат · ' : 'Тест завершён досрочно · ') + S.title;
+    $('resultScore').textContent = S.score + ' / ' + total + ' · ' + p + '%';
+    var g = grade(p);
+    $('resultGrade').textContent = total ? GRADE_TEXT[g] : 'Нет отвеченных вопросов';
+    $('resultGrade').className = 'grade g' + g;
+    $('mistakes').innerHTML = S.wrong.length ? '<div class="q-meta" style="margin-top:6px">Ошибки (' + S.wrong.length + ')</div>' +
+      S.wrong.map(function(q){
+        return '<div class="mistake"><div class="q-meta">' + esc(q.test.title) + ' · № ' + q.n + '</div><div class="mistake-q">' + esc(q.t) + '</div>' + imgHtml(q) +
+          '<div class="mistake-a">Правильно: ' + q.c.map(function(x){ return '<b>' + (x + 1) + ') ' + esc(q.o[x]) + '</b>'; }).join('; ') + '</div></div>';
+      }).join('') : '';
+    show('result');
+  }
+
+  $('checkBtn').addEventListener('click', check);
+  $('nextBtn').addEventListener('click', next);
+  $('finishBtn').addEventListener('click', function(){ finish(false); });
+  $('restartBtn').addEventListener('click', function(){
+    if(S.answered && !confirm('Начать тест заново? Текущий прогресс (' + S.answered + ' из ' + S.list.length + ') сбросится.')) return;
+    start(S.title, S.list.slice(), S.opts);
+  });
+  $('retrySame').addEventListener('click', function(){ start(S.title, S.list.slice(), S.opts); });
+  $('newSet').addEventListener('click', function(){
+    if(S.opts.random){ startRandomAll(); return; }
+    var t = S.opts.test, list = buildList(t, S.opts.mode);
+    start(runTitle(t, S.opts.mode, list), list, S.opts);
+  });
+  $('retryMistakes').addEventListener('click', function(){ start('Ошибки: ' + S.title, S.wrong.slice(), {mistakes: true}); });
+  $('nextTest').addEventListener('click', function(){ var nt = nextTestOf(S.opts.test); if(nt) openLaunch(nt); });
+  $('toMenu').addEventListener('click', renderHome);
+  $('modeMistakes').addEventListener('click', function(){ start('Работа над ошибками', shuffle(mistakes.map(function(id){ return BY_ID[id]; })), {mistakes: true}); });
+  function startRandomAll(){ start('30 случайных из всех тем', sample(ALL, 30), {random: true}); }
+  $('modeRandom').addEventListener('click', startRandomAll);
+
+  document.addEventListener('keydown', function(e){
+    if(!$('lightbox').hidden){ if(e.key === 'Escape') closeLightbox(); return; }
+    if($('screen-quiz').hidden || e.metaKey || e.ctrlKey || e.altKey) return;
+    if(/^[1-9]$/.test(e.key)){ toggle(parseInt(e.key, 10) - 1); e.preventDefault(); }
+    else if(e.key === 'Enter'){ e.preventDefault(); if(S.checked) next(); else check(); }
+  });
+
+  // ---------- Картинки ----------
+  function closeLightbox(){ $('lightbox').hidden = true; $('lightboxImg').src = ''; }
+  document.addEventListener('click', function(e){
+    var img = e.target.closest && e.target.closest('.q-img img');
+    if(img){ $('lightboxImg').src = img.src; $('lightbox').hidden = false; }
+  });
+  $('lightbox').addEventListener('click', closeLightbox);
+
+  // ---------- Список всех вопросов ----------
+  function listItemHtml(q){
+    return '<div class="list-q" id="q-' + q.id.replace(/\./g, '-') + '"><div class="q-meta">№ ' + q.n + (q.m ? ' · несколько ответов' : '') + '</div>' +
+      '<div class="q-text">' + esc(q.t).replace(/\n/g, '<br>') + '</div>' + imgHtml(q) + '<ol>' +
+      q.o.map(function(a, k){ return '<li' + (q.c.indexOf(k) >= 0 ? ' class="right"' : '') + '>' + esc(a) + '</li>'; }).join('') + '</ol></div>';
+  }
+  var listTopic = 0, listFromQuiz = false;
+  (function(){
+    TOPICS.forEach(function(tp, i){
+      var c = document.createElement('button'); c.type = 'button'; c.className = 'sec-chip wide'; c.dataset.topic = i;
+      c.textContent = tp.title; c.title = tp.title;
+      c.addEventListener('click', function(){ $('search').value = ''; renderList(i); });
+      $('topicNav').appendChild(c);
+    });
+  })();
+  function renderList(ti, focusId){
+    listTopic = ti;
+    var f = $('search').value.trim().toLowerCase();
+    var html = '', count = 0, LIMIT = 300;
+    $('topicNav').querySelectorAll('.sec-chip').forEach(function(c){ c.classList.toggle('active', !f && +c.dataset.topic === ti); });
+    var tn = $('testNav'); tn.innerHTML = '';
+    if(f){
+      TESTS.forEach(function(t){
+        var items = t.q.filter(function(q){ return q.t.toLowerCase().indexOf(f) >= 0 || q.o.some(function(a){ return a.toLowerCase().indexOf(f) >= 0; }); });
+        if(!items.length || count >= LIMIT) { count += items.length; return; }
+        var shown = items.slice(0, LIMIT - count); count += items.length;
+        html += '<div class="qgroup"><h2>' + esc(t.topic.title) + (t.topic.tests.length > 1 ? ' · ' + esc(t.title) : '') + ' <span class="h-meta">' + items.length + ' вопр.</span></h2>' + shown.map(listItemHtml).join('') + '</div>';
+      });
+      $('listCount').textContent = count ? ('Найдено: ' + count + (count > LIMIT ? ' (показаны первые ' + LIMIT + ' — уточни запрос)' : '')) : '';
+      tn.hidden = true;
+    } else {
+      var tp = TOPICS[ti];
+      tn.hidden = tp.tests.length < 2;
+      tp.tests.forEach(function(t, gi){
+        html += '<div class="qgroup" id="lt-' + gi + '" data-g="' + gi + '"><h2>' + esc(t.title) + ' <span class="h-meta">' + t.q.length + ' вопр.</span></h2>' + t.q.map(listItemHtml).join('') + '</div>';
+        if(tp.tests.length > 1){
+          var c = document.createElement('button'); c.type = 'button'; c.className = 'sec-chip wide'; c.dataset.g = gi; c.textContent = t.title;
+          c.addEventListener('click', function(){ var g = $('lt-' + gi); if(g) g.scrollIntoView({behavior: 'smooth', block: 'start'}); });
+          tn.appendChild(c);
+        }
+      });
+      $('listCount').textContent = TOPICS[ti].title + ': ' + tp.tests.reduce(function(s, t){ return s + t.q.length; }, 0) + ' вопросов';
+    }
+    $('list').innerHTML = html || '<div class="empty">Ничего не найдено</div>';
+    updateStick();
+    var active = $('topicNav').querySelector('.active');
+    if(active) active.scrollIntoView({block: 'nearest', inline: 'center'});
+    if(focusId){
+      var el = $('q-' + focusId.replace(/\./g, '-'));
+      if(el){ el.scrollIntoView({block: 'start'}); el.classList.add('flash'); }
+    } else window.scrollTo(0, 0);
+    spy();
+  }
+  function updateStick(){
+    var hdr = document.querySelector('header.top').offsetHeight;
+    document.documentElement.style.setProperty('--hdr', hdr + 'px');
+    document.documentElement.style.setProperty('--stick', (hdr + $('listTools').offsetHeight + 10) + 'px');
+  }
+  function spy(){
+    if($('screen-list').hidden) return;
+    $('toTop').classList.toggle('show', window.scrollY > 500);
+    var line = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--stick')) || 180;
+    var groups = $('list').querySelectorAll('.qgroup[data-g]'), cur = null;
+    for(var i = 0; i < groups.length; i++){ if(groups[i].getBoundingClientRect().top - line <= 12) cur = groups[i].dataset.g; else break; }
+    if(cur == null && groups.length) cur = groups[0].dataset.g;
+    $('testNav').querySelectorAll('.sec-chip').forEach(function(c){ c.classList.toggle('active', c.dataset.g === cur); });
+  }
+  var spyQ = false;
+  window.addEventListener('scroll', function(){ if(spyQ) return; spyQ = true; requestAnimationFrame(function(){ spyQ = false; spy(); }); }, {passive: true});
+  window.addEventListener('resize', function(){ if(!$('screen-list').hidden){ updateStick(); spy(); } });
+  $('toTop').addEventListener('click', function(){ window.scrollTo({top: 0, behavior: 'smooth'}); });
+  var searchTimer = null;
+  $('search').addEventListener('input', function(){ clearTimeout(searchTimer); searchTimer = setTimeout(function(){ renderList(listTopic); }, 200); });
+  function setListBack(fromQuiz){
+    listFromQuiz = fromQuiz;
+    $('listBack').textContent = fromQuiz ? '← К тесту' : '← Меню';
+  }
+  $('openList').addEventListener('click', function(){ $('search').value = ''; setListBack(false); show('list'); renderList(listTopic); });
+  $('listBack').addEventListener('click', function(){ if(listFromQuiz){ setListBack(false); show('quiz'); } else renderHome(); });
+  $('peekBtn').addEventListener('click', function(){
+    var q = S.list[S.i];
+    $('search').value = ''; setListBack(true); show('list'); renderList(q.test.topic.idx, q.id);
+  });
+
+  renderHome();
+})();
+</script>
+</body>
+</html>
