@@ -609,7 +609,7 @@
     show('quiz');
     renderQ();
   }
-  function imgHtml(q){ return q.img ? '<div class="q-img"><img src="' + q.img + '" alt="Иллюстрация к вопросу" loading="lazy"></div>' : ''; }
+  function imgHtml(q){ return q.img ? '<div class="q-img"><img src="' + q.img + '" alt="Иллюстрация к вопросу" decoding="async"></div>' : ''; }
   function renderQ(){
     var q = S.list[S.i];
     S.selected = []; S.checked = false;
